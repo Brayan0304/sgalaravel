@@ -5,6 +5,7 @@ use App\Http\Controllers\AddstaffController;
 use App\Http\Controllers\AddsalaryController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\CertificadoController;
+use App\Http\Controllers\LoginAdminController;
 
 // Ruta de la página de inicio
 Route::get('/', function () {
@@ -43,3 +44,7 @@ Route::prefix('api/reports')->group(function () {
 // Rutas de la API para geneación de reportes
 Route::get('api/certificados', [CertificadoController::class, 'index']);
 Route::post('api/certificados', [CertificadoController::class, 'store']);
+
+// Rutas de la API para el login de administradores
+Route::post('api/register', [LoginAdminController::class, 'register']);
+Route::post('api/login', [LoginAdminController::class, 'login']);
