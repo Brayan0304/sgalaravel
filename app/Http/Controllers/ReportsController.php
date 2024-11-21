@@ -8,10 +8,10 @@ use Illuminate\Http\Request;
 class ReportsController extends Controller
 {
     // Obtener todos los reportes
-     public function index()
-     {
-         return Reports::all();
-     }
+    public function index()
+    {
+        return Reports::all();
+    }
 
     // Almacenar un nuevo reporte
     public function store(Request $request)
@@ -51,23 +51,23 @@ class ReportsController extends Controller
     public function update(Request $request, $id)
     {
         $data = $request->validate([
-            'titulo' => 'string',
-            'titulo_2' => 'string',
-            'parrafo' => 'string',
-            'expedicion' => 'string',
-            'tamano_letra_titulo' => 'string',
-            'tamano_letra_titulo_2' => 'string',
-            'tamano_letra_parrafo' => 'string',
-            'tamano_letra_expedicion' => 'string',
-            'margen_izquierdo' => 'string',
-            'margen_derecho' => 'string',
-            'margen_superior' => 'string',
-            'margen_inferior' => 'string',
-            'tamano_hoja' => 'string',
-            'estilo_letra_titulo' => 'string',
-            'estilo_letra_titulo_2' => 'string',
-            'estilo_parrafo' => 'string',
-            'estilo_expedicion' => 'string',
+            'titulo' => 'sometimes|required|string',
+            'titulo_2' => 'sometimes|required|string',
+            'parrafo' => 'sometimes|required|string',
+            'expedicion' => 'sometimes|required|string',
+            'tamano_letra_titulo' => 'sometimes|required|string',
+            'tamano_letra_titulo_2' => 'sometimes|required|string',
+            'tamano_letra_parrafo' => 'sometimes|required|string',
+            'tamano_letra_expedicion' => 'sometimes|required|string',
+            'margen_izquierdo' => 'sometimes|required|string',
+            'margen_derecho' => 'sometimes|required|string',
+            'margen_superior' => 'sometimes|required|string',
+            'margen_inferior' => 'sometimes|required|string',
+            'tamano_hoja' => 'sometimes|required|string',
+            'estilo_letra_titulo' => 'sometimes|required|string',
+            'estilo_letra_titulo_2' => 'sometimes|required|string',
+            'estilo_parrafo' => 'sometimes|required|string',
+            'estilo_expedicion' => 'sometimes|required|string',
         ]);
 
         $report = Reports::findOrFail($id);
