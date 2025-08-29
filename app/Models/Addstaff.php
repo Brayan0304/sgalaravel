@@ -10,7 +10,10 @@ class Addstaff extends Model
     use HasFactory;
 
     protected $fillable = [
-        'id', 'name', 'apellidos', 'email', 'fecha_nacimiento',
+        'id', 
+        'name', 
+        'apellidos', 
+        'email', 'fecha_nacimiento',
         'municipio_expedicion', 'departamento_expedicion', 'direccion',
         'telefono', 'cargo',
     ];
