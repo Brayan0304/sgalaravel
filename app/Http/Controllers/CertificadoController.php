@@ -9,6 +9,7 @@ use TCPDF;
 
 class CertificadoController extends Controller
 {
+
     public function store(Request $request)
     {
         try {
@@ -17,14 +18,18 @@ class CertificadoController extends Controller
             $connection->getPdo(); // Verificar la conexión
 
             // Validación de los parámetros de entrada
+            // El campo report_id ahora es UUID/string (el modelo Reports genera UUID)
             $request->validate([
-                'report_id' => 'required|integer',
+                'report_id' => 'required|string',
                 'employee_ids' => 'required|string',
             ]);
-
-            // Extraer los IDs de empleados del string
+            
+            // Extraer los IDs de empleados del string y normalizarlos a strings
             $reportId = $request->input('report_id');
             $employeeIds = explode(';', $request->input('employee_ids'));
+            // Trim, filtrar vacíos y asegurar que todos sean strings (Postgres requiere tipos coincidentes)
+            $employeeIds = array_filter(array_map('trim', $employeeIds), fn($v) => $v !== '');
+            $employeeIds = array_values(array_map('strval', $employeeIds));
 
             // Realizar la consulta con parámetros bind para evitar inyecciones SQL
             $query = "SELECT * FROM reports WHERE id = :report_id";
@@ -58,30 +63,55 @@ class CertificadoController extends Controller
                 $pdf->Write(0, $reportData->titulo_2, '', 0, 'C', true);
                 $pdf->Ln(15);
 
-                // Buscar todos los empleados de una vez
-                $employees = Addstaff::whereIn('id', $employeeIds)->get();
+                // Cargar todos los empleados de una vez y solo las columnas necesarias
+                $employees = Addstaff::select(['id', 'name', 'apellidos', 'cargo'])
+                    ->whereIn('id', $employeeIds)
+                    ->get()
+                    ->keyBy(function($item) { return (string) $item->id; });
 
-                // Buscar al empleado por ID
-                $employee = $employees->firstWhere('id', $id);
+                // Recorrer los ids y agregar una página por cada empleado encontrado
+                foreach ($employeeIds as $eid) {
+                    $eid = (string) trim($eid);
 
-                $nombreCompleto = $employee->name . " " . $employee->apellidos;
-                $reportData->parrafo = str_replace('{nombreCompleto}', $nombreCompleto, $reportData->parrafo);
-                $reportData->parrafo = str_replace('{documento}', $employee->id, $reportData->parrafo);
-                $reportData->parrafo = str_replace('{cargo}', $employee->cargo, $reportData->parrafo);
+                    if (! isset($employees[$eid])) {
+                        // Si no existe el empleado, saltar
+                        continue;
+                    }
 
-                $pdf->SetFont('helvetica', '', $reportData->tamano_letra_parrafo);
-                $pdf->Write(0, $reportData->parrafo, '', 0, 'J', true);
-                $pdf->Ln(10);
+                    $employee = $employees[$eid];
 
-                $pdf->SetFont('helvetica', '', $reportData->tamano_letra_expedicion);
-                $reportData->expedicion = str_replace('{dia}', date('d'), $reportData->expedicion);
-                // Obtener el nombre del mes en palabras
-                setlocale(LC_TIME, 'es_ES.UTF-8');
+                    $pdf->AddPage();
+                    $pdf->SetFont('helvetica', 'B', $reportData->tamano_letra_titulo);
 
-                $mes = strftime('%B', strtotime(date('Y-m-d')));
-                $reportData->expedicion = str_replace('{mes}', $mes, $reportData->expedicion);
-                $reportData->expedicion = str_replace('{anio}', date('Y'), $reportData->expedicion);
-                $pdf->Write(0, $reportData->expedicion, '', 0, 'J', true);
+                    $pdf->Write(0, $reportData->titulo, '', 0, 'C', true);
+                    $pdf->Ln(5);
+
+                    $pdf->SetFont('helvetica', 'B', $reportData->tamano_letra_titulo_2);
+                    $pdf->Write(0, $reportData->titulo_2, '', 0, 'C', true);
+                    $pdf->Ln(15);
+
+                    // Usar copia de los campos para no mutar la plantilla original
+                    $paragraph = $reportData->parrafo;
+                    $nombreCompleto = $employee->name . " " . $employee->apellidos;
+                    $paragraph = str_replace('{nombreCompleto}', $nombreCompleto, $paragraph);
+                    $paragraph = str_replace('{documento}', $employee->id, $paragraph);
+                    $paragraph = str_replace('{cargo}', $employee->cargo, $paragraph);
+
+                    $pdf->SetFont('helvetica', '', $reportData->tamano_letra_parrafo);
+                    $pdf->Write(0, $paragraph, '', 0, 'J', true);
+                    $pdf->Ln(10);
+
+                    $pdf->SetFont('helvetica', '', $reportData->tamano_letra_expedicion);
+                    $expedicion = $reportData->expedicion;
+                    $expedicion = str_replace('{dia}', date('d'), $expedicion);
+                    // Obtener el nombre del mes en palabras
+                    setlocale(LC_TIME, 'es_ES.UTF-8');
+
+                    $mes = strftime('%B', strtotime(date('Y-m-d')));
+                    $expedicion = str_replace('{mes}', $mes, $expedicion);
+                    $expedicion = str_replace('{anio}', date('Y'), $expedicion);
+                    $pdf->Write(0, $expedicion, '', 0, 'J', true);
+                }
 
             }
 
@@ -90,7 +120,7 @@ class CertificadoController extends Controller
                 $pdf->Output('reporte.pdf', 'I');  // 'I' muestra el archivo en el navegador
             }, 200, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="reporte_' . $reportId . '.pdf"',
+                'Content-Disposition' => 'inline; filename="reporte.pdf"',
             ]);
 
         } catch (\Exception $e) {

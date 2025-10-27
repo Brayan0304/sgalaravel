@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('reports', function (Blueprint $table) {
-            $table->string('id')->primary(); // ID como varchar y clave primaria
+            $table->uuid('id')->primary(); // ID como UUID y clave primaria
             $table->string('titulo'); // Título como varchar
             $table->string('titulo_2'); // Título 2 como varchar
             $table->string('parrafo'); // Párrafo como varchar

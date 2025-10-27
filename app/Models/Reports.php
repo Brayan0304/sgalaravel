@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Reports extends Model
 {
@@ -28,4 +29,21 @@ class Reports extends Model
         'margen_inferior', 
         'tamano_hoja'
     ];
+
+    // Use string (UUID) primary key
+    protected $primaryKey = 'id';
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    /**
+     * Boot the model and assign a UUID to the id when creating.
+     */
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (empty($model->{$model->getKeyName()})) {
+                $model->{$model->getKeyName()} = (string) Str::uuid();
+            }
+        });
+    }
 }
