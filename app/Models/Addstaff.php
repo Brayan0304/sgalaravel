@@ -15,10 +15,12 @@ class Addstaff extends Model
         'apellidos', 
         'email', 'fecha_nacimiento',
         'municipio_expedicion', 'departamento_expedicion', 'direccion',
-        'telefono', 'cargo',
+        'telefono', 'cargo', 'fecha_ingreso', 'fecha_salida'
     ];
 
     protected $casts = [
         'id' => 'string', // Solo id
+        'fecha_ingreso' => 'date',
+        'fecha_salida' => 'date',
     ];
 }

@@ -20,6 +20,7 @@ class AddsalaryController extends Controller
         return response()->json(
             Cache::remember($cacheKey, $this->cacheTtl, function() {
                 // Optimización 1: Selección explícita de columnas necesarias
+                // Obtener salarios primero
                 $salaries = Addsalary::select([
                     'addsalaries.id',
                     'addsalaries.id_empleado',
@@ -27,20 +28,25 @@ class AddsalaryController extends Controller
                     'addsalaries.tiempo_pago',
                     'addsalaries.created_at',
                     'addsalaries.updated_at'
-                ])
-                ->with(['staff' => function($query) {
-                    // Optimización 2: Carga ansiosa solo con campos necesarios
-                    $query->select([
-                        'id',
-                        'name',
-                        'apellidos',
-                        'cargo'
-                    ]);
-                }])
-                ->get();
-                
-                // Optimización 3: Transformación de datos para evitar N+1
-                return $salaries->map(function($salary) {
+                ])->get();
+
+                // Extraer los ids de empleado, normalizarlos a string y únicos
+                $employeeIds = $salaries->pluck('id_empleado')
+                    ->filter()
+                    ->map(fn($v) => (string) trim($v))
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                // Cargar empleados una sola vez con ids como strings para evitar el error de Postgres
+                $employees = Addstaff::select(['id', 'name', 'apellidos', 'cargo'])
+                    ->whereIn('id', $employeeIds)
+                    ->get()
+                    ->keyBy(function($item) { return (string) $item->id; });
+
+                // Transformar y adjuntar datos del empleado (si existe)
+                return $salaries->map(function($salary) use ($employees) {
+                    $emp = $employees[(string) $salary->id_empleado] ?? null;
                     return [
                         'id' => $salary->id,
                         'id_empleado' => $salary->id_empleado,
@@ -48,9 +54,9 @@ class AddsalaryController extends Controller
                         'tiempo_pago' => $salary->tiempo_pago,
                         'created_at' => $salary->created_at,
                         'updated_at' => $salary->updated_at,
-                        'name' => $salary->staff->name ?? null,
-                        'apellidos' => $salary->staff->apellidos ?? null,
-                        'cargo' => $salary->staff->cargo ?? null,
+                        'name' => $emp->name ?? null,
+                        'apellidos' => $emp->apellidos ?? null,
+                        'cargo' => $emp->cargo ?? null,
                     ];
                 });
             })
@@ -126,8 +132,10 @@ class AddsalaryController extends Controller
     protected function validateSalaryData(Request $request, $id = null)
     {
         return $request->validate([
-            'id_empleado' => $id ? 'numeric|exists:addstaffs,id' : 'required|numeric|exists:addstaffs,id',
-            'salario' => $id ? 'numeric' : 'required|string',
+            // El ID de empleado se almacena como string en la tabla addstaffs
+            'id_empleado' => $id ? 'string|exists:addstaffs,id' : 'required|string|exists:addstaffs,id',
+            // Salario siempre numérico
+            'salario' => $id ? 'numeric' : 'required|numeric',
             'tiempo_pago' => $id ? 'string' : 'required|string',
         ]);
     }
