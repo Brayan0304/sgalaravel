@@ -146,6 +146,10 @@ class CertificadoController extends Controller
                 $expedicion = str_replace('{mes}', $mes, $expedicion);
                 $expedicion = str_replace('{anio}', date('Y'), $expedicion);
                 $pdf->Write(0, $expedicion, '', 0, 'J', true);
+
+                $pdf->Ln(20);
+                $txt = "Atentamente, <br><br>Brayan Rodriguez <br>Gerente <br>Firma y sello";
+                $pdf->writeHTML($txt, true, false, true, false, '');
             }
 
             // Generar y devolver el archivo PDF directamente al navegador
