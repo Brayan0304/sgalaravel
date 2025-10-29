@@ -15,8 +15,8 @@ return new class extends Migration
             $table->uuid('id')->primary(); // ID como UUID y clave primaria
             $table->string('titulo'); // Título como varchar
             $table->string('titulo_2'); // Título 2 como varchar
-            $table->string('parrafo'); // Párrafo como varchar
-            $table->string('expedicion'); // Expedición como varchar
+            $table->text('parrafo'); // Párrafo como text
+            $table->text('expedicion'); // Expedición como text
             $table->string('tamano_letra_titulo'); // Tamaño de letra del título como varchar
             $table->string('tamano_letra_titulo_2'); // Tamaño de letra del título 2 como varchar
             $table->string('tamano_letra_parrafo'); // Tamaño de letra del párrafo como varchar
